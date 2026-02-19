@@ -1,9 +1,9 @@
-from services.ml_engine import (
+from bharat.services.ml_engine import (
     train_anomaly_model,
     detect_anomaly,
     forecast_cpu
 )
-from services.database import get_recent_metrics
+from bharat.services.database import get_recent_metrics
 
 
 # =========================================================

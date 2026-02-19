@@ -1,7 +1,7 @@
 from flask import Flask
 from models import db
-from services.scheduler_service import start_scheduler
-from routes.monitoring_routes import monitoring_bp
+from bharat.services.scheduler_service import start_scheduler
+from bharat.routes.monitoring_routes import monitoring_bp
 
 import threading
 import os

@@ -1,9 +1,9 @@
 import time
 import logging
 
-from services.metrics_services import collect_metrics
-from services.detection_engine import analyze_metrics
-from services.remediation_service import trigger_remediation
+from bharat.services.metrics_services import collect_metrics
+from bharat.services.detection_engine import analyze_metrics
+from bharat.services.remediation_service import trigger_remediation
 
 
 # =========================================================

@@ -1,5 +1,5 @@
 from datetime import datetime
-from services.database import get_connection
+from bharat.services.database import get_connection
 
 
 # =========================================================

@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify
-from services.database import get_recent_metrics, get_connection
+from bharat.services.database import get_recent_metrics, get_connection
 
 monitoring_bp = Blueprint("monitoring", __name__)
 

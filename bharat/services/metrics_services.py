@@ -6,7 +6,7 @@ import logging
 from datetime import datetime
 import random
 
-from services.database import insert_metrics
+from bharat.services.database import insert_metrics
 
 
 # =========================================================

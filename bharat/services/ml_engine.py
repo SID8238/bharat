@@ -5,7 +5,7 @@ import time
 from sklearn.ensemble import IsolationForest
 from prophet import Prophet
 
-from services.database import get_recent_metrics
+from bharat.services.database import get_recent_metrics
 
 
 # =========================================================

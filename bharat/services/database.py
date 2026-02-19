@@ -104,3 +104,19 @@ def insert_incident(created_at, status, severity, service_id, node_id, root_caus
             node_id,
             root_cause
         ))
+
+# =========================================================
+# Fetch All Incidents
+# =========================================================
+def get_incidents():
+
+    with get_cursor() as cursor:
+        cursor.execute("""
+            SELECT * FROM incidents
+            ORDER BY created_at DESC
+        """)
+
+        rows = cursor.fetchall()
+
+        # convert sqlite rows → dict
+        return [dict(row) for row in rows]
