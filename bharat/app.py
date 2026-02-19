@@ -1,5 +1,6 @@
-from flask import Flask
-from models import db
+from flask import Flask, render_template, request, jsonify
+from .models import db, Metric, Incident
+from .services.database import get_recent_metrics, get_connection
 from bharat.services.scheduler_service import start_scheduler
 from bharat.routes.monitoring_routes import monitoring_bp
 
@@ -44,12 +45,18 @@ def create_app():
     # -----------------------------------------------------
     @app.route("/")
     def home():
-        return {
-            "status": "running",
-            "service": "SentinelOps",
-            "mode": "Predictive Monitoring",
-            "api_base": "/api"
-        }
+        return render_template("index.html")
+
+    # -----------------------------------------------------
+    # Simulation Routes (For Demo)
+    # -----------------------------------------------------
+    @app.route("/api/simulate/spike", methods=["POST"])
+    def simulate_spike():
+        # This is a placeholder since the actual simulation logic 
+        # is in bharat.services.metrics_services
+        from bharat.services.metrics_services import simulate_cpu_spike
+        simulate_cpu_spike(10) # 10 samples of high CPU
+        return jsonify({"status": "Simulation started"})
 
     return app
 
