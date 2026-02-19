@@ -1,11 +1,55 @@
 import sqlite3
 from contextlib import contextmanager
+from pathlib import Path
+
+# =========================================================
+# Database Path (ALWAYS inside this folder)
+# =========================================================
+BASE_DIR = Path(__file__).resolve().parent
+DB_PATH = BASE_DIR / "sentinelops.db"
 
 
 # =========================================================
-# Database Path (Project Root)
+# Initialize Database (auto-create tables)
 # =========================================================
-DB_PATH = "sentinelops.db"
+def init_db():
+
+    with sqlite3.connect(DB_PATH) as conn:
+        cursor = conn.cursor()
+
+        # ---------------- Metrics Table ----------------
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS metrics (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp TEXT,
+            node_id INTEGER,
+            service_id INTEGER,
+            cpu_usage REAL,
+            memory_usage REAL,
+            disk_usage REAL,
+            response_time_ms REAL,
+            error_rate REAL
+        )
+        """)
+
+        # ---------------- Incidents Table ----------------
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS incidents (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            created_at TEXT,
+            status TEXT,
+            severity TEXT,
+            service_id INTEGER,
+            node_id INTEGER,
+            root_cause TEXT
+        )
+        """)
+
+        conn.commit()
+
+
+# Initialize DB automatically on import
+init_db()
 
 
 # =========================================================
@@ -15,10 +59,10 @@ def get_connection():
 
     conn = sqlite3.connect(
         DB_PATH,
-        check_same_thread=False   # IMPORTANT for threaded scheduler
+        check_same_thread=False
     )
 
-    conn.row_factory = sqlite3.Row  # return dict-like rows
+    conn.row_factory = sqlite3.Row
     return conn
 
 
@@ -81,8 +125,6 @@ def get_recent_metrics(limit=50):
         """, (limit,))
 
         rows = cursor.fetchall()
-
-        # Return as tuples (expected by ML engine)
         return [tuple(row) for row in rows]
 
 
@@ -105,8 +147,9 @@ def insert_incident(created_at, status, severity, service_id, node_id, root_caus
             root_cause
         ))
 
+
 # =========================================================
-# Fetch All Incidents
+# Fetch Incidents
 # =========================================================
 def get_incidents():
 
@@ -117,6 +160,4 @@ def get_incidents():
         """)
 
         rows = cursor.fetchall()
-
-        # convert sqlite rows → dict
         return [dict(row) for row in rows]

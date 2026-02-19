@@ -105,25 +105,30 @@ def collect_metrics():
 
 
 # =========================================================
+# CPU Burn Worker (must be top-level for Windows)
+# =========================================================
+def cpu_burn(duration):
+    end = time.time() + duration
+    while time.time() < end:
+        pass
+
+
+# =========================================================
 # CPU Spike Simulation (MULTI-CORE)
 # =========================================================
 def simulate_cpu_spike(duration=15):
 
     logger.warning("Starting HIGH CPU spike simulation")
 
-    def burn():
-        end = time.time() + duration
-        while time.time() < end:
-            pass
-
     processes = []
 
     for _ in range(multiprocessing.cpu_count()):
-        p = multiprocessing.Process(target=burn)
+        p = multiprocessing.Process(target=cpu_burn, args=(duration,))
         p.start()
         processes.append(p)
 
     return {"status": "High CPU spike started"}
+
 
 
 # =========================================================
