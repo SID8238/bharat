@@ -9,10 +9,10 @@ def get_connection():
 
     conn = sqlite3.connect(
         DB_PATH,
-        check_same_thread=False   # IMPORTANT for threaded scheduler
+        check_same_thread=False
     )
 
-    conn.row_factory = sqlite3.Row  # return dict-like rows
+    conn.row_factory = sqlite3.Row
     return conn
 
 
@@ -75,8 +75,6 @@ def get_recent_metrics(limit=50):
         """, (limit,))
 
         rows = cursor.fetchall()
-
-        # Return as tuples (expected by ML engine)
         return [tuple(row) for row in rows]
 
 
@@ -99,8 +97,9 @@ def insert_incident(created_at, status, severity, service_id, node_id, root_caus
             root_cause
         ))
 
+
 # =========================================================
-# Fetch All Incidents
+# Fetch Incidents
 # =========================================================
 def get_incidents():
 
@@ -111,6 +110,4 @@ def get_incidents():
         """)
 
         rows = cursor.fetchall()
-
-        # convert sqlite rows → dict
         return [dict(row) for row in rows]
