@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SentinelOps | Advanced Predictive Monitoring</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-deep: #020617;
+            --card-overlay: rgba(15, 23, 42, 0.6);
+            --neon-blue: #0ea5e9;
+            --neon-purple: #8b5cf6;
+            --neon-emerald: #10b981;
+            --neon-rose: #f43f5e;
+            --glass-border: rgba(255, 255, 255, 0.08);
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-deep);
+            color: #f1f5f9;
+            background-image: 
+                radial-gradient(circle at 0% 0%, rgba(14, 165, 233, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 100% 100%, rgba(139, 92, 246, 0.08) 0%, transparent 50%);
+            background-attachment: fixed;
+            overflow: hidden;
+        }
+
+        .scroll-container::-webkit-scrollbar { width: 6px; }
+        .scroll-container::-webkit-scrollbar-track { background: transparent; }
+        .scroll-container::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
+        .scroll-container::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
+
+        .glass-panel {
+            background: var(--card-overlay);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 1.25rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glass-panel:hover {
+            border-color: rgba(14, 165, 233, 0.3);
+            box-shadow: 0 20px 40px -20px rgba(0, 0, 0, 0.5);
+        }
+
+        .sidebar-btn.active {
+            background: rgba(14, 165, 233, 0.1);
+            color: var(--neon-blue);
+            border-right: 3px solid var(--neon-blue);
+        }
+
+        .status-pulse {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            position: relative;
+        }
+
+        .status-pulse::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            border-radius: 50%;
+            background: inherit;
+            animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+        }
+
+        @keyframes ping {
+            75%, 100% { transform: scale(2.5); opacity: 0; }
+        }
+
+        .page-transition {
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        .hidden-page {
+            display: none;
+            opacity: 0;
+            transform: translateY(10px);
+        }
+    </style>
+</head>
+<body class="flex h-screen">
+
+    <!-- Navbar / Sidebar (Enlarged) -->
+    <aside class="w-64 border-r border-white/5 flex flex-col bg-slate-950/40 backdrop-blur-2xl z-50">
+        <div class="p-8 flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-sky-500/20">
+                <i class="fas fa-shield-halved text-white"></i>
+            </div>
+            <div>
+                <h1 class="text-lg font-bold tracking-tight">Sentinel<span class="text-sky-400">Ops</span></h1>
+                <p class="text-[9px] uppercase tracking-widest text-slate-500 font-bold">Matrix Monitor</p>
+            </div>
+        </div>
+
+        <nav class="flex-grow px-4 space-y-2">
+            <button onclick="switchPage('dashboard', this)" class="sidebar-btn active w-full flex items-center space-x-4 px-4 py-3 rounded-xl transition-all hover:bg-white/5 group">
+                <i class="fas fa-chart-line text-slate-400 group-hover:text-sky-400"></i>
+                <span class="text-sm font-semibold">Dashboard</span>
+            </button>
+            <button onclick="switchPage('nodes', this)" class="sidebar-btn w-full flex items-center space-x-4 px-4 py-3 rounded-xl transition-all hover:bg-white/5 group">
+                <i class="fas fa-server text-slate-400 group-hover:text-sky-400"></i>
+                <span class="text-sm font-semibold">Node Matrix</span>
+            </button>
+            <button onclick="switchPage('incidents', this)" class="sidebar-btn w-full flex items-center space-x-4 px-4 py-3 rounded-xl transition-all hover:bg-white/5 group">
+                <i class="fas fa-satellite-dish text-slate-400 group-hover:text-sky-400"></i>
+                <span class="text-sm font-semibold">Incident Log</span>
+            </button>
+            <button onclick="switchPage('settings', this)" class="sidebar-btn w-full flex items-center space-x-4 px-4 py-3 rounded-xl transition-all hover:bg-white/5 group">
+                <i class="fas fa-microchip text-slate-400 group-hover:text-sky-400"></i>
+                <span class="text-sm font-semibold">Settings</span>
+            </button>
+        </nav>
+
+        <div class="p-6">
+            <div class="p-4 rounded-2xl bg-slate-900/50 border border-white/5">
+                <div class="flex items-center space-x-3 mb-3">
+                    <div class="status-pulse bg-emerald-500"></div>
+                    <span class="text-[10px] uppercase font-bold text-emerald-400">System Online</span>
+                </div>
+                <div class="text-[11px] text-slate-400 mb-2">Syncing with Sentinel Alpha...</div>
+                <div class="w-full bg-slate-800 h-1 rounded-full overflow-hidden">
+                    <div class="bg-sky-500 h-full w-2/3 animate-pulse"></div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Viewport -->
+    <div class="flex-grow flex flex-col min-w-0">
+        
+        <!-- Header -->
+        <header class="h-20 border-b border-white/5 flex items-center justify-between px-10 bg-slate-950/20 backdrop-blur-md">
+            <h2 id="page-title" class="text-xl font-bold">Dashboard Overview</h2>
+            
+            <div class="flex items-center space-x-8">
+                <div class="hidden md:flex flex-col items-end">
+                    <span id="current-time" class="text-lg font-mono font-bold">00:00:00</span>
+                    <span class="text-[9px] uppercase tracking-widest text-slate-500 font-bold">Standard Network Time</span>
+                </div>
+                
+                <div class="flex items-center space-x-3">
+                    <button class="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/5">
+                        <i class="fas fa-search"></i>
+                    </button>
+                    <button class="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/5 relative">
+                        <i class="fas fa-bell"></i>
+                        <span class="absolute top-0 right-0 w-2.5 h-2.5 bg-rose-500 rounded-full border-2 border-slate-950"></span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Dynamic Content (With Container) -->
+        <main class="flex-grow overflow-y-auto scroll-container p-8">
+            <div class="max-w-[1600px] mx-auto space-y-8">
+                
+                <!-- Dashboard Page -->
+                <div id="page-dashboard" class="page-transition space-y-8">
+                    <!-- Top Metric Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                        <div class="glass-panel p-6 flex flex-col justify-between">
+                            <div class="flex justify-between items-start">
+                                <span class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Core Health</span>
+                                <i class="fas fa-circle-nodes text-emerald-400"></i>
+                            </div>
+                            <div class="mt-4 flex items-baseline space-x-2">
+                                <span id="health-val" class="text-4xl font-bold">--</span>
+                                <span class="text-slate-500 font-bold">%</span>
+                            </div>
+                            <div class="mt-2 h-1 w-full bg-slate-800 rounded-full overflow-hidden">
+                                <div id="health-bar" class="h-full bg-emerald-500 transition-all duration-1000"></div>
+                            </div>
+                        </div>
+
+                        <div class="glass-panel p-6" onclick="focusMetric('cpu')">
+                            <div class="flex justify-between items-start">
+                                <span class="text-[10px] font-bold uppercase tracking-widest text-slate-500">CPU Load</span>
+                                <i class="fas fa-microchip text-sky-400"></i>
+                            </div>
+                            <div class="mt-4 text-4xl font-bold" id="cpu-val">--%</div>
+                            <div class="mt-4 h-12">
+                                <canvas id="cpu-sparkline"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="glass-panel p-6" onclick="focusMetric('memory')">
+                            <div class="flex justify-between items-start">
+                                <span class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Ram Sync</span>
+                                <i class="fas fa-memory text-purple-400"></i>
+                            </div>
+                            <div class="mt-4 text-4xl font-bold" id="mem-val">--%</div>
+                            <div class="mt-4 h-12">
+                                <canvas id="mem-sparkline"></canvas>
+                            </div>
+                        </div>
+
+                        <div id="risk-panel" class="glass-panel p-6 border-l-4 border-l-emerald-500 bg-emerald-500/5 transition-all">
+                            <div class="flex justify-between items-start">
+                                <span class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Risk Matrix</span>
+                                <i id="risk-icon" class="fas fa-shield-check text-emerald-400"></i>
+                            </div>
+                            <div id="risk-status" class="mt-4 text-xl font-bold">Secure</div>
+                            <p id="risk-msg" class="text-[11px] text-slate-500 mt-2">All protocols operational.</p>
+                        </div>
+                    </div>
+
+                    <!-- Charts Row -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <div class="lg:col-span-2 glass-panel p-8">
+                            <div class="flex justify-between items-center mb-8">
+                                <h3 class="text-lg font-bold">Infrasctructure Timeline</h3>
+                                <div class="flex space-x-2">
+                                    <button onclick="toggleDataset(0)" class="px-3 py-1 rounded-lg bg-sky-500/10 text-sky-400 text-xs font-bold border border-sky-500/20">CPU</button>
+                                    <button onclick="toggleDataset(1)" class="px-3 py-1 rounded-lg bg-purple-500/10 text-purple-400 text-xs font-bold border border-purple-500/20">RAM</button>
+                                </div>
+                            </div>
+                            <div class="h-[400px]">
+                                <canvas id="main-timeline-chart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="glass-panel p-8 space-y-8">
+                            <div>
+                                <h3 class="text-sm font-bold uppercase tracking-widest text-slate-500 mb-6">Simulation Hub</h3>
+                                <div class="space-y-4">
+                                    <button onclick="triggerSim('/api/simulate/spike', this)" class="w-full flex items-center justify-between p-4 rounded-2xl bg-slate-900 hover:bg-amber-500/10 border border-white/5 transition-all group">
+                                        <div class="flex items-center space-x-4">
+                                            <div class="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-500">
+                                                <i class="fas fa-bolt"></i>
+                                            </div>
+                                            <div class="text-left">
+                                                <div class="text-sm font-bold">Trigger Stress Test</div>
+                                                <div class="text-[10px] text-slate-500">Simulate CPU Spike</div>
+                                            </div>
+                                        </div>
+                                        <i class="fas fa-chevron-right text-slate-600 transition-transform group-hover:translate-x-1"></i>
+                                    </button>
+
+                                    <button onclick="triggerSim('/api/simulate/spike', this)" class="w-full flex items-center justify-between p-4 rounded-2xl bg-slate-900 hover:bg-rose-500/10 border border-white/5 transition-all group">
+                                        <div class="flex items-center space-x-4">
+                                            <div class="w-10 h-10 rounded-xl bg-rose-500/10 flex items-center justify-center text-rose-500">
+                                                <i class="fas fa-bug"></i>
+                                            </div>
+                                            <div class="text-left">
+                                                <div class="text-sm font-bold">Inject Memory Leak</div>
+                                                <div class="text-[10px] text-slate-500">Memory Pressure Sim</div>
+                                            </div>
+                                        </div>
+                                        <i class="fas fa-chevron-right text-slate-600 transition-transform group-hover:translate-x-1"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div>
+                                <h3 class="text-sm font-bold uppercase tracking-widest text-slate-500 mb-6">Resource Radar</h3>
+                                <div class="h-64">
+                                    <canvas id="radar-chart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Incident Page (Hidden by default) -->
+                <div id="page-incidents" class="page-transition hidden-page space-y-8">
+                    <div class="glass-panel overflow-hidden">
+                        <div class="p-8 border-b border-white/5 bg-slate-900/20 flex justify-between items-center">
+                            <h3 class="text-lg font-bold">Central Intelligence Log</h3>
+                            <button class="px-4 py-2 rounded-xl bg-sky-500 text-white text-xs font-bold shadow-lg shadow-sky-500/20">Export Archive</button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead class="text-[10px] uppercase font-bold text-slate-500 bg-slate-950/20">
+                                    <tr>
+                                        <th class="px-8 py-5">REF</th>
+                                        <th class="px-8 py-5">Severity</th>
+                                        <th class="px-8 py-5">Status</th>
+                                        <th class="px-8 py-5">Root Cause Analysis</th>
+                                        <th class="px-8 py-5">Timestamp</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="incident-rows" class="divide-y divide-white/5 font-mono text-xs">
+                                    <!-- Dynamic rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Nodes Page -->
+                <div id="page-nodes" class="page-transition hidden-page p-20 text-center">
+                    <i class="fas fa-server text-6xl text-slate-800 mb-6"></i>
+                    <h3 class="text-2xl font-bold">Node Management</h3>
+                    <p class="text-slate-500 mt-2">Active clustering visualization being rendered...</p>
+                </div>
+
+                <!-- Settings Page -->
+                <div id="page-settings" class="page-transition hidden-page p-20 text-center">
+                    <i class="fas fa-cog text-6xl text-slate-800 mb-6 animate-spin-slow"></i>
+                    <h3 class="text-2xl font-bold">System Configuration</h3>
+                    <p class="text-slate-500 mt-2">Telemetry adjustment tools coming soon.</p>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Notification Container -->
+    <div id="toast-container" class="fixed bottom-8 right-8 z-[100] flex flex-col items-end space-y-4"></div>
+
+    <script src="/static/app.js"></script>
+    <script>
+        // Page Switching Logic
+        function switchPage(pageId, btn) {
+            // Update Buttons
+            document.querySelectorAll('.sidebar-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            // Update Header
+            const titles = {
+                'dashboard': 'Dashboard Overview',
+                'nodes': 'Node Infrastructure',
+                'incidents': 'Incident Intelligence',
+                'settings': 'Console Settings'
+            };
+            document.getElementById('page-title').textContent = titles[pageId];
+
+            // Update Visibility
+            document.querySelectorAll('.page-transition').forEach(p => {
+                p.classList.add('hidden-page');
+                p.style.display = 'none';
+            });
+            
+            const activePage = document.getElementById('page-' + pageId);
+            activePage.style.display = 'block';
+            setTimeout(() => {
+                activePage.classList.remove('hidden-page');
+            }, 10);
+        }
+
+        // Sim UI Feedback
+        async function triggerSim(url, btn) {
+            const icon = btn.querySelector('.fa-bolt, .fa-bug');
+            const originalClass = icon.className;
+            icon.className = 'fas fa-spinner fa-spin';
+            
+            try {
+                const res = await fetch(url, { method: 'POST' });
+                const data = await res.json();
+                showNotification(`Simulation Initiated: ${data.status}`, 'info');
+            } catch (e) {
+                showNotification("Target system unreachable", "error");
+            } finally {
+                setTimeout(() => icon.className = originalClass, 1500);
+            }
+        }
+
+        function showNotification(msg, type) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `p-4 rounded-2xl border backdrop-blur-xl flex items-center space-x-4 shadow-2xl transition-all duration-300 transform translate-y-10 opacity-0 ${type === 'error' ? 'bg-rose-500/10 border-rose-500/20 text-rose-400' : 'bg-sky-500/10 border-sky-500/20 text-sky-400'}`;
+            toast.innerHTML = `<i class="fas ${type === 'error' ? 'fa-triangle-exclamation' : 'fa-circle-info'}"></i><span class="text-xs font-bold">${msg}</span>`;
+            
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.remove('translate-y-10', 'opacity-0');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-x-10');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+    </script>
+</body>
+</html>

@@ -1,56 +1,6 @@
 import sqlite3
 from contextlib import contextmanager
-from pathlib import Path
-
-# =========================================================
-# Database Path (ALWAYS inside this folder)
-# =========================================================
-BASE_DIR = Path(__file__).resolve().parent
-DB_PATH = BASE_DIR / "sentinelops.db"
-
-
-# =========================================================
-# Initialize Database (auto-create tables)
-# =========================================================
-def init_db():
-
-    with sqlite3.connect(DB_PATH) as conn:
-        cursor = conn.cursor()
-
-        # ---------------- Metrics Table ----------------
-        cursor.execute("""
-        CREATE TABLE IF NOT EXISTS metrics (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            timestamp TEXT,
-            node_id INTEGER,
-            service_id INTEGER,
-            cpu_usage REAL,
-            memory_usage REAL,
-            disk_usage REAL,
-            response_time_ms REAL,
-            error_rate REAL
-        )
-        """)
-
-        # ---------------- Incidents Table ----------------
-        cursor.execute("""
-        CREATE TABLE IF NOT EXISTS incidents (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            created_at TEXT,
-            status TEXT,
-            severity TEXT,
-            service_id INTEGER,
-            node_id INTEGER,
-            root_cause TEXT
-        )
-        """)
-
-        conn.commit()
-
-
-# Initialize DB automatically on import
-init_db()
-
+from bharat.services.config import DB_PATH
 
 # =========================================================
 # Connection Helper
@@ -155,7 +105,7 @@ def get_incidents():
 
     with get_cursor() as cursor:
         cursor.execute("""
-            SELECT * FROM incidents
+            SELECT id, severity, status, root_cause, created_at FROM incidents
             ORDER BY created_at DESC
         """)
 
