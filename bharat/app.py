@@ -3,6 +3,7 @@ from .models import db, Metric, Incident
 from .services.database import get_recent_metrics, get_connection
 from bharat.services.scheduler_service import start_scheduler
 from bharat.routes.monitoring_routes import monitoring_bp
+from bharat.services.config import DB_PATH
 
 import threading
 import os
@@ -16,12 +17,9 @@ def create_app():
     app = Flask(__name__)
 
     # -----------------------------------------------------
-    # Database in project root
+    # Database
     # -----------------------------------------------------
-    BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-    db_path = os.path.join(BASE_DIR, "sentinelops.db")
-
-    app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{db_path}"
+    app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{DB_PATH}"
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     app.config["JSON_SORT_KEYS"] = False
 
@@ -33,7 +31,7 @@ def create_app():
     with app.app_context():
         db.create_all()
 
-    print(f"✅ Database ready at: {db_path}")
+    print(f"✅ Database ready at: {DB_PATH}")
 
     # -----------------------------------------------------
     # Register APIs

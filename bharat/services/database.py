@@ -1,12 +1,6 @@
 import sqlite3
 from contextlib import contextmanager
-
-
-# =========================================================
-# Database Path (Project Root)
-# =========================================================
-DB_PATH = "sentinelops.db"
-
+from bharat.services.config import DB_PATH
 
 # =========================================================
 # Connection Helper
@@ -112,7 +106,7 @@ def get_incidents():
 
     with get_cursor() as cursor:
         cursor.execute("""
-            SELECT * FROM incidents
+            SELECT id, severity, status, root_cause, created_at FROM incidents
             ORDER BY created_at DESC
         """)
 
